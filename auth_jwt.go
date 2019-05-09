@@ -127,6 +127,19 @@ type GinJWTMiddleware struct {
 	CookieName string
 }
 
+// JWTResponse represent the data structure the login and refresh handler will response
+type JWTResponse struct {
+	Code   int    `json:"code"`
+	Token  string `json:"token"`
+	Expire string `json:"expire"`
+}
+
+// JWTResponse represent the data structure used for unauthorized response
+type JWTUnauthorizedResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
 var (
 	// ErrMissingSecretKey indicates Secret key is required
 	ErrMissingSecretKey = errors.New("secret key is required")
@@ -276,30 +289,19 @@ func (mw *GinJWTMiddleware) MiddlewareInit() error {
 
 	if mw.Unauthorized == nil {
 		mw.Unauthorized = func(c *gin.Context, code int, message string) {
-			c.JSON(code, gin.H{
-				"code":    code,
-				"message": message,
-			})
+			c.JSON(code, JWTUnauthorizedResponse{code, message})
 		}
 	}
 
 	if mw.LoginResponse == nil {
 		mw.LoginResponse = func(c *gin.Context, code int, token string, expire time.Time) {
-			c.JSON(http.StatusOK, gin.H{
-				"code":   http.StatusOK,
-				"token":  token,
-				"expire": expire.Format(time.RFC3339),
-			})
+			c.JSON(http.StatusOK, JWTResponse{http.StatusOK, token, expire.Format(time.RFC3339)})
 		}
 	}
 
 	if mw.RefreshResponse == nil {
 		mw.RefreshResponse = func(c *gin.Context, code int, token string, expire time.Time) {
-			c.JSON(http.StatusOK, gin.H{
-				"code":   http.StatusOK,
-				"token":  token,
-				"expire": expire.Format(time.RFC3339),
-			})
+			c.JSON(http.StatusOK, JWTResponse{http.StatusOK, token, expire.Format(time.RFC3339)})
 		}
 	}
 
